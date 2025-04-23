@@ -4,6 +4,7 @@ import com.google.gson.JsonElement;
 import com.mojang.serialization.DynamicOps;
 import com.mojang.serialization.JavaOps;
 import com.mojang.serialization.JsonOps;
+import lombok.SneakyThrows;
 import net.minecraft.core.IRegistryCustom;
 import net.minecraft.core.component.DataComponentMap;
 import net.minecraft.core.component.DataComponentPatch;
@@ -13,14 +14,28 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.MinecraftKey;
 import org.bukkit.craftbukkit.v1_21_R1.CraftRegistry;
 
+import java.lang.reflect.Method;
+import java.util.Arrays;
 import java.util.List;
 
 public class ComponentUtil_v1_21_R1 extends ComponentUtil {
+    private final Class<?> providerClazz;
+    private final Method aMethod;
 
     private final IRegistryCustom registry = CraftRegistry.getMinecraftRegistry();
 
-    private final DynamicOps<JsonElement> jsonDynamic = registry.a(JsonOps.INSTANCE);
-    private final DynamicOps<Object> javaDynamic = registry.a(JavaOps.INSTANCE);
+    private final DynamicOps<JsonElement> jsonDynamic;
+    private final DynamicOps<Object> javaDynamic;
+
+    @SneakyThrows
+    public ComponentUtil_v1_21_R1() {
+        this.providerClazz = Class.forName("net.minecraft.class_7225$class_7874");
+        this.aMethod = Arrays.stream(providerClazz.getDeclaredMethods()).filter(m->
+                m.toString().equals("public default net.minecraft.class_6903 net.minecraft.class_7225$class_7874.method_57093(com.mojang.serialization.DynamicOps)")
+        ).findFirst().get();
+        this.jsonDynamic = (DynamicOps<JsonElement>) aMethod.invoke(registry,JsonOps.INSTANCE);
+        this.javaDynamic = (DynamicOps<Object>) aMethod.invoke(registry, JavaOps.INSTANCE);
+    }
 
     @Override
     public DataComponentMap getDataComponentMap(Object nmsItem) {
